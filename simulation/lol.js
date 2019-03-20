@@ -8,10 +8,6 @@ function callPage() {
         callContact(), $contactPage.addClass("active") // pass
     }), $(".block--contact .close").on("click", function () {
         $contactPage.removeClass("active"), existProjects()
-    }), $(".project-logo").on("click", function () {
-        callProjects(), $projectsPart.addClass("active")
-    }), $(".block--projects .close").on("click", function () {
-        $projectsPart.removeClass("active"), existProjects()
     }), $(document).keyup(function (t) {
         27 == t.which && $contactPage.hasClass("active") && ($contactPage.removeClass("active"), $contactPage.hide())
     }), $(".block--contact button").on("click", function (t) {
@@ -36,11 +32,6 @@ function callPage() {
                     e.css({
                         "background-color": "green"
                     }), e.html("Sent! Take a coffee and wait").fadeIn(999).attr('disabled', true)
-                },
-                error: function () {
-                    e.css({
-                        "background-color": "red"
-                    }), e.html("Something turned wrong, retry.").fadeIn(999)
                 }
             })
         } else {
