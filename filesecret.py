@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("url", help="target's url")
 parser.add_argument("-d", "--dynamic", help="increase precision by checking dynamic files (require webdriver)", default=False)
 parser.add_argument("-e", "--external", help="increase precision by analyzing external libraries", default=False)
+parser.add_argument("-k", "--keep", help="keep file when downloaded, do not remove them", default=False)
 args = parser.parse_args()
 
 
@@ -62,23 +63,11 @@ def downloadLocally(fileUrl, initialUrl):
 
 ## open the and search in it
 def digger(fileName):
-    ## opening the file and reading each word
-    with open("secrets.txt", "r") as f: lines = [line.rstrip('\n \t') for line in f]
-    lineCpt = 0
-    with open("binder/" + fileName) as openfile:
-        for line in openfile:
-            lineCpt = lineCpt + 1
-            for part in line.split():
-                for word in lines:
-                    if word in part:
-                        print(colored(" [*] Found : Word : '" + word + "' at line " + str(lineCpt) + " in " + fileName, "red"))
-
-with open("secrets.txt", "r") as f: words = [line.rstrip('\n \t') for line in f]
-regex = "\\b" + "\\b|\\b".join(words) + "\\b"
-
-for i, line in enumerate(open('binder/app.js')):
-    for match in re.finditer(regex, line):
-        print('Found on line %s: %s' % (i+1, match.group(0)))
+    with open("secrets.txt", "r") as f: words = [line.rstrip('\n \t') for line in f]
+    regex = "\\b" + "\\b|\\b".join(words) + "\\b"
+    for i, line in enumerate(open('binder/' + fileName)):
+        for match in re.finditer(regex, line, flags=re.IGNORECASE):
+            print(colored(" [*] Found : Word : '" + match.group(0) + "' at line " + str(i+1) + " in " + fileName, "red"))
 
 ## used as middleware, should be used first to correctly format url
 def formatUrlInput(url):
@@ -143,12 +132,13 @@ if args.dynamic:
     print(colored("[*] Downloading css files...", "blue"))
 
 ## delete all files in the folder binder/
-folder = 'binder/'
-for the_file in os.listdir(folder):
-    file_path = os.path.join(folder, the_file)
-    try:
-        if os.path.isfile(file_path):
-            os.unlink(file_path)
-    except Exception as e:
-        print(e)
+if (args.keep == False):
+    folder = 'binder/'
+    for the_file in os.listdir(folder):
+        file_path = os.path.join(folder, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        except Exception as e:
+            print(e)
 
