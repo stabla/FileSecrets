@@ -10,7 +10,7 @@ downloadedFiles = []
 
 parser = argparse.ArgumentParser()
 parser.add_argument("url", help="target's url")
-parser.add_argument("-d", "--depth", help="increase precision by checking dynamic files (require webdrive)", default=False)
+parser.add_argument("-d", "--dynamic", help="increase precision by checking dynamic files (require webdriver)", default=False)
 parser.add_argument("-e", "--external", help="increase precision by analyzing external libraries", default=False)
 args = parser.parse_args()
 
@@ -83,8 +83,8 @@ print(colored(" FileSecrets                          v0.1  @stabla  ", "blue"))
 if args.url:
     print(colored("=====================================================", "blue"))
     print(colored(" url : " + args.url, "blue"))
-    a = 'true' if args.depth else 'false'
-    print(colored(" depth : " + a, "blue"))
+    a = 'true' if args.dynamic else 'false'
+    print(colored(" dynamic : " + a, "blue"))
 
     b = 'true' if args.external else 'false'
     print(colored(" external : " + b, "blue"))
@@ -98,9 +98,9 @@ if args.url:
     for cssFiles in getCSSFiles(url):
         print(cssFiles)
 
-## check the depth given as argument (optional)
-## In depth, you need chrome driver and it will do a better inspect with dynamic js file
-if args.depth:
+## check the dynamic given as argument (optional)
+## In dynamic, you need chrome driver and it will do a better inspect with dynamic js file
+if args.dynamic:
     options = Options()
     options.headless = True
     driver = webdriver.Chrome('driver/chromedriver', options=options)  # use Chrome driver for example
