@@ -44,39 +44,46 @@ def sameDomain(fileUrl, initialUrl):
             return False
     return True
 
-## download a file
-def downloadLocally(fileUrl, initialUrl):
-    if sameDomain(fileUrl, initialUrl):
-        ## download on intiialUrl + fileUrl
-        url = initialUrl + fileUrl
-        file_name = getFileURI(fileUrl)
-        print(colored("[*] Download file :" + file_name, "blue"))
-        downloadedFiles.append(file_name)
-        # Download the file from `url` and save it locally under `file_name`:
-        urllib.request.urlretrieve(url, "binder/" + file_name)
-
-        
 ## get the filename with its extension
 def getFileURI(URL):
     filename_w_ext = os.path.basename(URL)
     filename, file_extension = os.path.splitext(filename_w_ext)
     return filename + '' + file_extension
 
+## download a file
+def downloadLocally(fileUrl, initialUrl):
+    if sameDomain(fileUrl, initialUrl):
+        ## download on intiialUrl + fileUrl
+        url = initialUrl + fileUrl
+        file_name = getFileURI(fileUrl)
+        downloadedFiles.append(file_name)
+        # Download the file from `url` and save it locally under `file_name`:
+        urllib.request.urlretrieve(url, "binder/" + file_name)
+
 ## open the and search in it
 def digger(fileName):
+    ## opening the file and reading each word
+    with open("secrets.txt", "r") as f: lines = [line.rstrip('\n \t') for line in f]
     lineCpt = 0
     with open("binder/" + fileName) as openfile:
         for line in openfile:
             lineCpt = lineCpt + 1
             for part in line.split():
-                if "pointer" in part:
-                    print(colored(" [*] Found : at line " + str(lineCpt) + " in " + fileName, "red"))
+                for word in lines:
+                    if word in part:
+                        print(colored(" [*] Found : Word : '" + word + "' at line " + str(lineCpt) + " in " + fileName, "red"))
 
-downloadLocally("js/app.js", "https://www.guillaumebonnet.fr/")       
+with open("secrets.txt", "r") as f: words = [line.rstrip('\n \t') for line in f]
+regex = "\\b" + "\\b|\\b".join(words) + "\\b"
 
+for i, line in enumerate(open('binder/app.js')):
+    for match in re.finditer(regex, line):
+        print('Found on line %s: %s' % (i+1, match.group(0)))
+
+## used as middleware, should be used first to correctly format url
 def formatUrlInput(url):
     url = url
-    if re.search("^www.", fileUrl):
+    if (not re.search("^www.", url) and (not re.search("^(http|https)://", url))):
         url = "www." + url
     if (not url.endswith('/')):
         url = url + '/'
@@ -88,24 +95,40 @@ def formatUrlInput(url):
 print(colored("=====================================================", "blue"))
 print(colored(" FileSecrets                          v0.1  @stabla  ", "blue"))
 
-## check the url given as argument
+## main
 if args.url:
+    url = args.url
     print(colored("=====================================================", "blue"))
     print(colored(" url : " + args.url, "blue"))
     a = 'true' if args.dynamic else 'false'
-    print(colored(" dynamic : " + a, "blue"))
+    print(colored(" dynamic (not done yet) : " + a, "blue"))
 
     b = 'true' if args.external else 'false'
     print(colored(" external : " + b, "blue"))
     print(colored("=====================================================", "blue"))
-    url = args.url
+
+    ## format url
+    url = formatUrlInput(args.url)
+
     if "http" not in args.url:
         url = "http://" + args.url
-        
+    cpt = 0
     for jsFiles in getJSFiles(url):
         print(jsFiles)
+        downloadLocally(jsFiles, url)
+    print(colored("[OK] Downloaded js files. ", "blue"))
     for cssFiles in getCSSFiles(url):
         print(cssFiles)
+        downloadLocally(cssFiles, url)
+    print(colored("[OK] Downloaded css files. ", "blue"))
+
+    print(colored("[*] List of files currently downloaded locally", "blue"))
+    print(downloadedFiles)
+    
+    digger('app.js')
+
+else:
+    print("ERROR: NO URL.")
 
 ## check the dynamic given as argument (optional)
 ## In dynamic, you need chrome driver and it will do a better inspect with dynamic js file
@@ -119,10 +142,6 @@ if args.dynamic:
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     print(colored("[*] Downloading css files...", "blue"))
 
-## main
-
-
-print(downloadedFiles)
 ## delete all files in the folder binder/
 folder = 'binder/'
 for the_file in os.listdir(folder):
@@ -130,6 +149,6 @@ for the_file in os.listdir(folder):
     try:
         if os.path.isfile(file_path):
             os.unlink(file_path)
-        #elif os.path.isdir(file_path): shutil.rmtree(file_path)
     except Exception as e:
         print(e)
+
