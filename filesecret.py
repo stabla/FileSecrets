@@ -6,8 +6,6 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys  
 from selenium.webdriver.chrome.options import Options  
 
-downloadedFiles = []
-
 parser = argparse.ArgumentParser()
 parser.add_argument("url", help="target's url")
 parser.add_argument("-d", "--dynamic", help="increase precision by checking dynamic files (require webdriver)", default=False)
@@ -15,6 +13,7 @@ parser.add_argument("-e", "--external", help="increase precision by analyzing ex
 parser.add_argument("-k", "--keep", help="keep file when downloaded, do not remove them", default=False)
 args = parser.parse_args()
 
+downloadedFiles = []
 
 ## find js files
 def getJSFiles(url):
@@ -84,7 +83,6 @@ def formatUrlInput(url):
 print(colored("=====================================================", "blue"))
 print(colored(" FileSecrets                          v0.1  @stabla  ", "blue"))
 
-## main
 if args.url:
     url = args.url
     print(colored("=====================================================", "blue"))
@@ -99,9 +97,11 @@ if args.url:
     ## format url
     url = formatUrlInput(args.url)
 
-    if "http" not in args.url:
-        url = "http://" + args.url
+    if "http" not in url:
+        url = "http://" + url
     cpt = 0
+
+    print(colored(url, "red"))
 
     for jsFiles in getJSFiles(url):
         print(jsFiles)
@@ -117,11 +117,9 @@ if args.url:
     print(downloadedFiles)
     
     print(colored("[*] Starting the digging in files... ", "blue"))
-    for i in downloadedFiles:
-        digger(i)
-
+    digger("basesign.css")
 else:
-    print("ERROR: NO URL.")
+    print(colored("/!\ ERROR: NO URL.", "purple"))
 
 ## check the dynamic given as argument (optional)
 ## In dynamic, you need chrome driver and it will do a better inspect with dynamic js file
