@@ -20,7 +20,9 @@ def getJSFiles(url):
     page = requests.get(url).text
     soup = BeautifulSoup(page, 'html.parser')
     print(colored("[*] Retrieving js files...", "blue"))
-    js = [i.get('src') for i in soup.find_all('script') if (i.get('src') and re.search('.js$', i.get('src')))]
+    js = [i.get('src') for i in soup.find_all('script') if (i.get('src') and re.search('.js$', i.get('src')) and (args.external or sameDomain(i.get('src'), url)))]
+    ## for j in js:
+        ## print(j)
     return js
 
 ## find css files
@@ -28,7 +30,7 @@ def getCSSFiles(url):
     page = requests.get(url).text
     soup = BeautifulSoup(page, 'html.parser')
     print(colored("[*] Retrieving css files...", "blue"))
-    css = [i.get('href') for i in soup.find_all('link') if (i.get('href') and re.search('.css$', i.get('href')) and sameDomain(i.get('href'), url))]
+    css = [i.get('href') for i in soup.find_all('link') if (i.get('href') and re.search('.css$', i.get('href')) and (args.external or sameDomain(i.get('href'), url)))]
     return css
 
 ## verify if the file is hosted on the given URL
@@ -107,7 +109,5 @@ if args.depth:
     driver.get(url)
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     print(colored("[*] Downloading css files...", "blue"))
-    js = [i.get('src') for i in soup.find_all('script') if (i.get('src') and re.search('.js$', i.get('src')) and sameDomain(i.get('src'), url))]
-    ## for j in js:
-        ## print(j)
 
+## main
