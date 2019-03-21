@@ -1,4 +1,4 @@
-import os, requests, re, tldextract, argparse
+import os, requests, re, tldextract, argparse, shutil
 import urllib.request
 from bs4 import BeautifulSoup
 from termcolor import colored
@@ -50,7 +50,8 @@ def downloadLocally(fileUrl, initialUrl):
         ## download on intiialUrl + fileUrl
         url = initialUrl + fileUrl
         file_name = getFileURI(fileUrl)
-        print(colored("[*] Download file:" + file_name, "blue"))
+        print(colored("[*] Download file :" + file_name, "blue"))
+        downloadedFiles.append(file_name)
         # Download the file from `url` and save it locally under `file_name`:
         urllib.request.urlretrieve(url, "binder/" + file_name)
 
@@ -71,7 +72,15 @@ def digger(fileName):
                 if "pointer" in part:
                     print(colored(" [*] Found : at line " + str(lineCpt) + " in " + fileName, "red"))
 
-digger("app.js")        
+downloadLocally("js/app.js", "https://www.guillaumebonnet.fr/")       
+
+def formatUrlInput(url):
+    url = url
+    if re.search("^www.", fileUrl):
+        url = "www." + url
+    if (not url.endswith('/')):
+        url = url + '/'
+    return url
 
 ###############
 ## user menu ##
@@ -111,3 +120,16 @@ if args.dynamic:
     print(colored("[*] Downloading css files...", "blue"))
 
 ## main
+
+
+print(downloadedFiles)
+## delete all files in the folder binder/
+folder = 'binder/'
+for the_file in os.listdir(folder):
+    file_path = os.path.join(folder, the_file)
+    try:
+        if os.path.isfile(file_path):
+            os.unlink(file_path)
+        #elif os.path.isdir(file_path): shutil.rmtree(file_path)
+    except Exception as e:
+        print(e)
