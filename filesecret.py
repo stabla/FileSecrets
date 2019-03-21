@@ -67,7 +67,7 @@ def digger(fileName):
     regex = "\\b" + "\\b|\\b".join(words) + "\\b"
     for i, line in enumerate(open('binder/' + fileName)):
         for match in re.finditer(regex, line, flags=re.IGNORECASE):
-            print(colored(" [*] Found : Word : '" + match.group(0) + "' at line " + str(i+1) + " in " + fileName, "red"))
+            print(colored(" [*] Found word : '" + match.group(0) + "' at line " + str(i+1) + " in " + fileName, "red"))
 
 ## used as middleware, should be used first to correctly format url
 def formatUrlInput(url):
@@ -102,10 +102,12 @@ if args.url:
     if "http" not in args.url:
         url = "http://" + args.url
     cpt = 0
+
     for jsFiles in getJSFiles(url):
         print(jsFiles)
         downloadLocally(jsFiles, url)
     print(colored("[OK] Downloaded js files. ", "blue"))
+
     for cssFiles in getCSSFiles(url):
         print(cssFiles)
         downloadLocally(cssFiles, url)
@@ -114,7 +116,9 @@ if args.url:
     print(colored("[*] List of files currently downloaded locally", "blue"))
     print(downloadedFiles)
     
-    digger('app.js')
+    print(colored("[*] Starting the digging in files... ", "blue"))
+    for i in downloadedFiles:
+        digger(i)
 
 else:
     print("ERROR: NO URL.")
