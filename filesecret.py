@@ -11,6 +11,7 @@ parser.add_argument("url", help="target's url")
 parser.add_argument("-d", "--dynamic", help="increase precision by checking dynamic files (require webdriver)", default=False)
 parser.add_argument("-e", "--external", help="increase precision by analyzing external libraries", default=False)
 parser.add_argument("-k", "--keep", help="keep file when downloaded, do not remove them", default=False)
+parser.add_argument("-w", "--word", help="add some words to the original library", default="")
 args = parser.parse_args()
 
 downloadedFiles = []
@@ -21,8 +22,6 @@ def getJSFiles(url):
     soup = BeautifulSoup(page, 'html.parser')
     print(colored("[*] Retrieving js files...", "blue"))
     js = [i.get('src') for i in soup.find_all('script') if (i.get('src') and re.search('.js$', i.get('src')) and (args.external or sameDomain(i.get('src'), url)))]
-    ## for j in js:
-        ## print(j)
     return js
 
 ## find css files
@@ -63,10 +62,13 @@ def downloadLocally(fileUrl, initialUrl):
 ## open the and search in it
 def digger(fileName):
     with open("secrets.txt", "r") as f: words = [line.rstrip('\n \t') for line in f]
+    if args.word:
+        just_word = [x.strip() for x in args.word.split(',')]
+        words.extend(just_word)
     regex = "\\b" + "\\b|\\b".join(words) + "\\b"
     for i, line in enumerate(open('binder/' + fileName)):
         for match in re.finditer(regex, line, flags=re.IGNORECASE):
-            print(colored(" [*] Found word : '" + match.group(0) + "' at line " + str(i+1) + " in " + fileName, "red"))
+            print(colored("         [*] Found word : '" + match.group(0) + "' at line " + str(i+1) + " in " + fileName, "red"))
 
 ## used as middleware, should be used first to correctly format url
 def formatUrlInput(url):
@@ -104,20 +106,22 @@ if args.url:
     print(colored(url, "red"))
 
     for jsFiles in getJSFiles(url):
-        print(jsFiles)
+        print("     [-] " + jsFiles)
         downloadLocally(jsFiles, url)
     print(colored("[OK] Downloaded js files. ", "blue"))
 
     for cssFiles in getCSSFiles(url):
-        print(cssFiles)
+        print("     [-] " + cssFiles)
         downloadLocally(cssFiles, url)
     print(colored("[OK] Downloaded css files. ", "blue"))
 
     print(colored("[*] List of files currently downloaded locally", "blue"))
-    print(downloadedFiles)
+    print("     "  + str(downloadedFiles))
     
     print(colored("[*] Starting the digging in files... ", "blue"))
-    digger("basesign.css")
+    for i in downloadedFiles:
+        print(colored("     [-] Checking in " + i, "blue"))
+        digger(i)
 else:
     print(colored("/!\ ERROR: NO URL.", "purple"))
 
