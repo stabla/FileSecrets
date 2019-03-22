@@ -28,6 +28,12 @@ def getCSSFiles(url):
     css = [i.get('href') for i in soup.find_all('link') if (i.get('href') and re.search('.css$', i.get('href')) and (args.external or sameDomain(i.get('href'), url)))]
     return css
 
+## find css files
+def getHTMLFiles(url):
+    print(colored("[*] Retrieving html files...", "blue"))
+    html = [i.get('href') for i in soup.find_all('a') if (i.get('href') and re.search('.css$', i.get('href')) and (args.external or sameDomain(i.get('href'), url)))]
+    return html
+
 ## verify if the file is hosted on the given URL
 def sameDomain(fileUrl, initialUrl):
     domainName = tldextract.extract(initialUrl).domain
@@ -54,6 +60,12 @@ def downloadLocally(fileUrl, initialUrl):
         downloadedFiles.append(file_name)
         # Download the file from `url` and save it locally under `file_name`:
         urllib.request.urlretrieve(url, "binder/" + file_name)
+
+## download the homepage
+def downloadOrigin(intiialUrl):
+    url = intiialUrl
+    downloadedFiles.append("HOMME_PAGE.html")
+    urllib.request.urlretrieve(url, "binder/" + "HOME_PAGE.html")
 
 ## open the and search in it
 def digger(fileName):
@@ -102,6 +114,8 @@ if args.url:
     page = requests.get(url).text
     soup = BeautifulSoup(page, 'html.parser')
 
+    downloadOrigin(url)
+
    ## check the dynamic given as argument (optional)
     ## In dynamic, you need chrome driver and it will do a better inspect with dynamic js file
     if args.dynamic:
@@ -117,7 +131,6 @@ if args.url:
     print('here')
     for jsFiles in getJSFiles(url):
         print("     [-] " + jsFiles)
-
         print('there')
         downloadLocally(jsFiles, url)
     print(colored("[OK] Downloaded js files. ", "blue"))
@@ -126,6 +139,11 @@ if args.url:
         print("     [-] " + cssFiles)
         downloadLocally(cssFiles, url)
     print(colored("[OK] Downloaded css files. ", "blue"))
+
+    ##for htmlFiles in getHTMLFiles(url):
+    ##    print("     [-] " + htmlFiles)
+    ##    downloadLocally(htmlFiles, url)
+    ##print(colored("[OK] Downloaded html files. ", "blue"))
 
     print(colored("[*] List of files currently downloaded locally", "blue"))
     print("     "  + str(downloadedFiles))
@@ -136,8 +154,6 @@ if args.url:
         digger(i)
 else:
     print(colored("/!\ ERROR: NO URL.", "purple"))
-
-
 
 ## delete all files in the folder binder/
 if (args.keep == False):
