@@ -31,7 +31,11 @@ def getCSSFiles(url):
 ## find css files
 def getHTMLFiles(url):
     print(colored("[*] Retrieving html files...", "blue"))
-    html = [i.get('href') for i in soup.find_all('a') if (i.get('href') and re.search('.css$', i.get('href')) and (args.external or sameDomain(i.get('href'), url)))]
+    html = [i.get('href') for i in soup.find_all('a') if (i.get('href') and re.search('.php$|.html$', i.get('href')) and (sameDomain(i.get('href'), url)))]
+    for i in soup.find_all('a'):
+        if (i.get('href') and re.search('.*$', i.get('href')) and (sameDomain(i.get('href'), url) == False)):
+            print(colored("     [!] There's a pointer to an external website: " + i.get('href') + " - Not going further", "grey", attrs=['bold']))
+    print(html)
     return html
 
 ## verify if the file is hosted on the given URL
@@ -64,7 +68,7 @@ def downloadLocally(fileUrl, initialUrl):
 ## download the homepage
 def downloadOrigin(intiialUrl):
     url = intiialUrl
-    downloadedFiles.append("HOMME_PAGE.html")
+    downloadedFiles.append("HOME_PAGE.html")
     urllib.request.urlretrieve(url, "binder/" + "HOME_PAGE.html")
 
 ## open the and search in it
@@ -128,10 +132,8 @@ if args.url:
         driver.get(url)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
-    print('here')
     for jsFiles in getJSFiles(url):
         print("     [-] " + jsFiles)
-        print('there')
         downloadLocally(jsFiles, url)
     print(colored("[OK] Downloaded js files. ", "blue"))
 
@@ -140,10 +142,10 @@ if args.url:
         downloadLocally(cssFiles, url)
     print(colored("[OK] Downloaded css files. ", "blue"))
 
-    ##for htmlFiles in getHTMLFiles(url):
-    ##    print("     [-] " + htmlFiles)
-    ##    downloadLocally(htmlFiles, url)
-    ##print(colored("[OK] Downloaded html files. ", "blue"))
+    for htmlFiles in getHTMLFiles(url):
+        print("     [-] " + htmlFiles)
+        downloadLocally(htmlFiles, url)
+    print(colored("[OK] Downloaded html files. ", "blue"))
 
     print(colored("[*] List of files currently downloaded locally", "blue"))
     print("     "  + str(downloadedFiles))
