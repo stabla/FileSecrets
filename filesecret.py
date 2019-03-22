@@ -1,4 +1,4 @@
-import os, requests, re, tldextract, argparse, shutil
+import os, requests, re, tldextract, argparse, shutil, time
 import urllib.request
 from bs4 import BeautifulSoup
 from termcolor import colored
@@ -28,16 +28,26 @@ def getCSSFiles(url):
     css = [i.get('href') for i in soup.find_all('link') if (i.get('href') and re.search('.css$', i.get('href')) and (args.external or sameDomain(i.get('href'), url)))]
     return css
 
-## find css files
+## find html, php files files
 def getHTMLFiles(url):
     print(colored("[*] Retrieving html files...", "blue"))
     html = [i.get('href') for i in soup.find_all('a') if (i.get('href') and re.search('.php$|.html$', i.get('href')) and (sameDomain(i.get('href'), url)))]
     for i in soup.find_all('a'):
         if (i.get('href') and re.search('.*$', i.get('href')) and (sameDomain(i.get('href'), url) == False)):
             print(colored("     [!] There's a pointer to an external website: " + i.get('href') + " - Not going further", "grey", attrs=['bold']))
-    print(html)
     return html
 
+## find all others, with no extension
+def getOtherFiles(url):
+    print(colored("[*] Retrieving other files...", "blue"))
+    other = [i.get('href') for i in soup.find_all('a') if (i.get('href') and re.search('^([^.]+)$', i.get('href')) and (sameDomain(i.get('href'), url)))]
+    print(other)
+    ##print(other)
+    ##for i in other:
+      ##  print(i)
+        ##if i != '#':
+          ##  urllib.request.urlretrieve(i, "binder/" + os.path.splitext("path_to_file")[0] + ".txt")
+    
 ## verify if the file is hosted on the given URL
 def sameDomain(fileUrl, initialUrl):
     domainName = tldextract.extract(initialUrl).domain
@@ -62,8 +72,10 @@ def downloadLocally(fileUrl, initialUrl):
         url = initialUrl + fileUrl
         file_name = getFileURI(fileUrl)
         downloadedFiles.append(file_name)
+        print("to be downloaded:" + file_name)
         # Download the file from `url` and save it locally under `file_name`:
         urllib.request.urlretrieve(url, "binder/" + file_name)
+        print("downloaded:" + file_name)
 
 ## download the homepage
 def downloadOrigin(intiialUrl):
@@ -133,19 +145,22 @@ if args.url:
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
     for jsFiles in getJSFiles(url):
-        print("     [-] " + jsFiles)
+        print("     [+] " + jsFiles)
         downloadLocally(jsFiles, url)
     print(colored("[OK] Downloaded js files. ", "blue"))
 
     for cssFiles in getCSSFiles(url):
-        print("     [-] " + cssFiles)
+        print("     [+] " + cssFiles)
         downloadLocally(cssFiles, url)
     print(colored("[OK] Downloaded css files. ", "blue"))
 
     for htmlFiles in getHTMLFiles(url):
-        print("     [-] " + htmlFiles)
+        print("     [+] " + htmlFiles)
         downloadLocally(htmlFiles, url)
     print(colored("[OK] Downloaded html files. ", "blue"))
+
+    getOtherFiles(url)
+    print(colored("[OK] Downloaded all other files... ", "blue"))
 
     print(colored("[*] List of files currently downloaded locally", "blue"))
     print("     "  + str(downloadedFiles))
@@ -167,3 +182,5 @@ if (args.keep == False):
                 os.unlink(file_path)
         except Exception as e:
             print(e)
+
+## try something else
