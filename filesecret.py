@@ -18,16 +18,12 @@ downloadedFiles = []
 
 ## find js files
 def getJSFiles(url):
-    page = requests.get(url).text
-    soup = BeautifulSoup(page, 'html.parser')
     print(colored("[*] Retrieving js files...", "blue"))
     js = [i.get('src') for i in soup.find_all('script') if (i.get('src') and re.search('.js$', i.get('src')) and (args.external or sameDomain(i.get('src'), url)))]
     return js
 
 ## find css files
 def getCSSFiles(url):
-    page = requests.get(url).text
-    soup = BeautifulSoup(page, 'html.parser')
     print(colored("[*] Retrieving css files...", "blue"))
     css = [i.get('href') for i in soup.find_all('link') if (i.get('href') and re.search('.css$', i.get('href')) and (args.external or sameDomain(i.get('href'), url)))]
     return css
@@ -90,7 +86,7 @@ if args.url:
     print(colored("=====================================================", "blue"))
     print(colored(" url : " + args.url, "blue"))
     a = 'true' if args.dynamic else 'false'
-    print(colored(" dynamic (not done yet) : " + a, "blue"))
+    print(colored(" dynamic : " + a, "blue"))
 
     b = 'true' if args.external else 'false'
     print(colored(" external : " + b, "blue"))
@@ -103,10 +99,26 @@ if args.url:
         url = "http://" + url
     cpt = 0
 
-    print(colored(url, "red"))
+    page = requests.get(url).text
+    soup = BeautifulSoup(page, 'html.parser')
 
+   ## check the dynamic given as argument (optional)
+    ## In dynamic, you need chrome driver and it will do a better inspect with dynamic js file
+    if args.dynamic:
+        print(colored("=====================================================", "blue"))
+        print (colored("Running Headless Chrome Initialized", "blue"))
+        options = Options()
+        options.headless = True
+        driver = webdriver.Chrome('driver/chromedriver', options=options)  # use Chrome driver for example
+        driver.set_window_position(-10000,0)
+        driver.get(url)
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+
+    print('here')
     for jsFiles in getJSFiles(url):
         print("     [-] " + jsFiles)
+
+        print('there')
         downloadLocally(jsFiles, url)
     print(colored("[OK] Downloaded js files. ", "blue"))
 
@@ -125,17 +137,7 @@ if args.url:
 else:
     print(colored("/!\ ERROR: NO URL.", "purple"))
 
-## check the dynamic given as argument (optional)
-## In dynamic, you need chrome driver and it will do a better inspect with dynamic js file
-if args.dynamic:
-    options = Options()
-    options.headless = True
-    driver = webdriver.Chrome('driver/chromedriver', options=options)  # use Chrome driver for example
-    driver.set_window_position(-10000,0)
-    print ("Running Headless Chrome Initialized")
-    driver.get(url)
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-    print(colored("[*] Downloading css files...", "blue"))
+
 
 ## delete all files in the folder binder/
 if (args.keep == False):
@@ -147,4 +149,3 @@ if (args.keep == False):
                 os.unlink(file_path)
         except Exception as e:
             print(e)
-
