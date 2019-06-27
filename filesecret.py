@@ -1,13 +1,11 @@
-import os, requests, re, tldextract, argparse, shutil
+import os, requests, re, tldextract, argparse, shutil, requests
 import mimetypes
-import urllib
+import urllib.request
 from bs4 import BeautifulSoup
 from termcolor import colored
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys  
 from selenium.webdriver.chrome.options import Options  
-
-urllib.URLopener.version = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36'
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -20,13 +18,12 @@ def str2bool(v):
 parser = argparse.ArgumentParser()
 parser.add_argument("url", help="target's url")
 parser.add_argument("-d", "--dynamic", help="increase precision by checking dynamic files (require webdriver)", type=str2bool, default=False)
-parser.add_argument("-e", "--external", help="increase precision by analyzing external libraries (third-parties components)", type=str2bool, default=False)
+parser.add_argument("-e", "--external", help="increase precision by analyzing external libraries", type=str2bool, default=False)
 parser.add_argument("-k", "--keep", help="keep file when downloaded, do not remove them", type=str2bool, default=False)
 parser.add_argument("-w", "--word", help="add some words to the original library", default="")
-parser.add_argument("-dic", "--dictionnary", help="use your own dictionnary of words", type=str2bool, default=True)
+parser.add_argument("-dic", "--dictionnary", help="add some words to the original library", type=str2bool, default=True)
 args = parser.parse_args()
 
-pathFiles = []
 downloadedFiles = []
 folder = 'binder/'
 
@@ -34,14 +31,12 @@ folder = 'binder/'
 def getJSFiles(url):
     print(colored("[*] Retrieving js files...", "blue"))
     js = [i.get('src') for i in soup.find_all('script') if (i.get('src') and re.search('.js$', i.get('src')) and (args.external or sameDomain(i.get('src'), url)))]
-    for i in js: pathFiles.append(i)
     return js
 
 ## find css files
 def getCSSFiles(url):
     print(colored("[*] Retrieving css files...", "blue"))
     css = [i.get('href') for i in soup.find_all('link') if (i.get('href') and re.search('.css$', i.get('href')) and (args.external or sameDomain(i.get('href'), url)))]
-    for j in css: pathFiles.append(j)
     return css
 
 ## find html, php files files
@@ -51,21 +46,17 @@ def getHTMLFiles(url):
     for i in soup.find_all('a'):
         if (i.get('href') and re.search('.*$', i.get('href')) and (sameDomain(i.get('href'), url) == False)):
             print(colored("     [!] There's a pointer to an external website: " + i.get('href') + " - Not going further", "grey", attrs=['bold']))
-    for k in html: pathFiles.append(k)
     return html
 
 ## find all others, with no extension
 def getOtherFiles(url):
     print(colored("[*] Retrieving other files...", "blue"))
     other = [i.get('href') for i in soup.find_all('a') if (i.get('href') and re.search('^(?!mailto:|ftp://|^#$|.*\.css$|.*\.html|.*\.php)', i.get('href')) and (sameDomain(i.get('href'), url)))]
-    ## for unknown extension
     for i in other:
         last_url_part = i.rsplit('/', 1)
         print("     [+] " + last_url_part[1] + " (unknown extension)")
-        urllib.urlretrieve(i, folder + last_url_part[1] + ".txt")
+        urllib.request.urlretrieve(i, folder + last_url_part[1] + ".txt")
         downloadedFiles.append(last_url_part[1] + ".txt")
-    for l in other: pathFiles.append(l)
-
     
 ## verify if the file is hosted on the given URL
 def sameDomain(fileUrl, initialUrl):
@@ -90,23 +81,16 @@ def downloadLocally(fileUrl, initialUrl):
         ## download on intiialUrl + fileUrl
         url = initialUrl + fileUrl
         file_name = getFileURI(fileUrl)
-        print("ici ")
-        print(url)
         downloadedFiles.append(file_name)
         # Download the file from `url` and save it locally under `file_name`:
-        urllib.urlretrieve(url, folder + file_name)
+        urllib.request.urlretrieve(url, folder + file_name)
 
 ## download the homepage
 def downloadOrigin(intiialUrl):
     url = intiialUrl
     downloadedFiles.append("HOME_PAGE.html")
-    urllib.urlretrieve(url, folder + "HOME_PAGE.html")
+    urllib.request.urlretrieve(url, folder + "HOME_PAGE.html")
 
-def downloadFile(url):
-    urllib.URLopener.version = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:21.0) Gecko/20100101 Firefox/21.0'
-    print(url)
-    urllib.urlretrieve(url, folder + "INITIAL.html")
-    #urllib.urlretrieve(url, folder + "INTIIAL.html")
 
 ## open the and search in it
 def digger(fileName):
@@ -140,10 +124,7 @@ print(colored(" FileSecrets                          v0.1  @stabla  ", "blue"))
 def main():
     if args.url:
 
-        ## downloadOrigin(url)
-        print(url)
-        downloadFile(url)
-        print("la apres downloadOrigin")
+        downloadOrigin(url)
 
         ## check the dynamic given as argument (optional)
         ## In dynamic, you need chrome driver and it will do a better inspect with dynamic js file
@@ -156,32 +137,30 @@ def main():
             driver.set_window_position(-10000,0)
             driver.get(url)
             soup = BeautifulSoup(driver.page_source, 'html.parser')
-      
-        '''
+
         for jsFiles in getJSFiles(url):
             print("     [+] " + jsFiles)
             downloadLocally(jsFiles, url)
-            print('apres js downloadLocally')
         print(colored("[OK] Downloaded js files. ", "blue"))
 
-        ### print(pathFiles)
-
-        ## CHECK FOR CSS FILES
         for cssFiles in getCSSFiles(url):
             print("     [+] " + cssFiles)
             downloadLocally(cssFiles, url)
         print(colored("[OK] Downloaded css files. ", "blue"))
 
-        ## CHECK FOR HTML FILES
         for htmlFiles in getHTMLFiles(url):
             print("     [+] " + htmlFiles)
             downloadLocally(htmlFiles, url)
         print(colored("[OK] Downloaded html files. ", "blue"))
-        print(colored("[OK] Downloaded all other files... ", "blue"))
+
         getOtherFiles(url)
+        print(colored("[OK] Downloaded all other files... ", "blue"))
+
         print(colored("[*] List of files currently downloaded locally", "blue"))
-        print("     "  + u", ".join(downloadedFiles))
+        print("     "  + str(downloadedFiles))
+        
         print(colored("[*] Starting the digging in files... ", "blue"))
+
         if ((args.dictionnary == False) and (args.word == "")):
             print(colored("/!\ ERROR: NO DICTIONNARY AND NO WORDS.", "magenta"))
         else:
@@ -200,24 +179,9 @@ def main():
                             os.unlink(file_path)
                     except Exception as e:
                         print(e)
-        '''
     else:
         print(colored("/!\ ERROR: NO URL.", "magenta"))
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-## CHECKS ARGUMENTS
 if ((args.dictionnary == False) and (args.word == "")):
     print(colored("/!\ ERROR: NO DICTIONNARY AND NO WORDS.", "magenta"))
 else:
